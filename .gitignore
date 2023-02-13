@@ -1,0 +1,6 @@
+# IDE's
+.idea/
+
+# Dependencies
+composer.lock
+vendor/
