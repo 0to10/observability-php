@@ -1,6 +1,6 @@
 {
   "name": "0to10/observability-php",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "authors": [
     {
@@ -27,5 +27,8 @@
     "phpunit/phpunit": "~7.4.4",
     "lstrojny/phpunit-function-mocker": "~1.0.1"
   },
-  "minimum-stability": "stable"
+  "minimum-stability": "stable",
+  "replace": {
+    "nouve/application-monitoring": "^1.2.3"
+  }
 }
