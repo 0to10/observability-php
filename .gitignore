@@ -1,6 +1,9 @@
 # IDE's
 .idea/
 
+# Project
+build/
+
 # Dependencies
 composer.lock
 vendor/
