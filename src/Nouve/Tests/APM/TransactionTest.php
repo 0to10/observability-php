@@ -2,10 +2,12 @@
 declare(strict_types=1);
 namespace Nouve\Tests\APM;
 
+use InvalidArgumentException;
 use Nouve\APM\AgentInterface;
 use Nouve\APM\Transaction;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * TransactionTest
@@ -59,13 +61,13 @@ class TransactionTest extends TestCase
      * @group unit
      * @covers ::setName
      *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Unable to change the transaction name.
-     *
      * @return void
      */
     public function testSetNameFailsThrowsException(): void
     {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to change the transaction name.');
+
         $this->agent
             ->expects($this->once())
             ->method('setTransactionName')
@@ -116,13 +118,13 @@ class TransactionTest extends TestCase
      * @group unit
      * @covers ::addMetric
      *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Unable to add metric to the transaction.
-     *
      * @return void
      */
     public function testAddMetricFailsThrowsException(): void
     {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to add metric to the transaction.');
+
         $this->agent
             ->expects($this->once())
             ->method('addTransactionMetric')
@@ -137,13 +139,13 @@ class TransactionTest extends TestCase
      * @group unit
      * @covers ::addMetric
      *
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Transaction metric value must be an integer or float, "string" given.
-     *
      * @return void
      */
     public function testAddMetricWithStringThrowsException(): void
     {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Transaction metric value must be an integer or float, "string" given.');
+
         $this->agent
             ->expects($this->never())
             ->method('addTransactionMetric')
@@ -174,13 +176,13 @@ class TransactionTest extends TestCase
      * @group unit
      * @covers ::addParameter
      *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Unable to add parameter to the transaction.
-     *
      * @return void
      */
     public function testAddParameterFailsThrowsException(): void
     {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to add parameter to the transaction.');
+
         $this->agent
             ->expects($this->once())
             ->method('addTransactionParameter')
