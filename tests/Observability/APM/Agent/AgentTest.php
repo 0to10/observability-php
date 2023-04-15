@@ -97,6 +97,42 @@ class AgentTest extends TestCase
     }
 
     /**
+     * @covers ::isReservedWord
+     * @covers ::reserveWords
+     * @group unit
+     *
+     * @dataProvider reservedWordsDataProvider
+     *
+     * @param string $word
+     * @param bool $expectedReserved
+     * @return void
+     */
+    public function testIsReservedWord(string $word, bool $expectedReserved): void
+    {
+        /** @var Agent|MockObject $agentMock */
+        $agentMock = $this->getMockForAbstractClass(Agent::class);
+        $agentMock->reserveWords('reserved_word', 'test', 'timestamp');
+
+        $this->assertSame($expectedReserved, $agentMock->isReservedWord($word));
+    }
+
+    /**
+     * @return array[]
+     */
+    public function reservedWordsDataProvider(): array
+    {
+        return [
+            ['reserved_word', true],
+            ['test', true],
+            [' test', true],
+            ['test ', true],
+            ['not_reserved', false],
+            ['timestamp', true],
+            ['timestamp_50', false],
+        ];
+    }
+
+    /**
      * @covers ::createTransaction
      * @group unit
      *

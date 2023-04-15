@@ -52,6 +52,12 @@ interface AgentInterface extends BrowserAgentInterface, TransactionAgentInterfac
     public function addCustomMetric(string $name, float $milliseconds): void;
 
     /**
+     * @param string $word
+     * @return bool
+     */
+    public function isReservedWord(string $word): bool;
+
+    /**
      * Returns `true` if the Agent is supported, `false` if it is not.
      *
      * @return bool

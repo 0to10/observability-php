@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace ZERO2TEN\Observability\APM\Agent;
 
+use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
@@ -9,6 +10,9 @@ use ZERO2TEN\Observability\APM\AgentInterface;
 use ZERO2TEN\Observability\APM\FunctionProxy;
 use ZERO2TEN\Observability\APM\Transaction;
 use ZERO2TEN\Observability\APM\TransactionInterface;
+
+use function in_array;
+use function trim;
 
 /**
  * Agent
@@ -23,6 +27,8 @@ abstract class Agent implements AgentInterface, LoggerAwareInterface
 
     /** @var bool */
     private $initialised;
+    /** @var string[] */
+    private $reservedWords = [];
 
     /**
      * @constructor
@@ -80,8 +86,37 @@ abstract class Agent implements AgentInterface, LoggerAwareInterface
     /**
      * @inheritDoc
      */
+    public function isReservedWord(string $word): bool
+    {
+        return in_array(trim($word), $this->reservedWords, true);
+    }
+
+    /**
+     * @inheritDoc
+     */
     final public function isSupported(): bool
     {
         return $this->initialised;
+    }
+
+    /**
+     * @param string ...$word
+     * @return void
+     */
+    final public function reserveWords(string ...$word): void
+    {
+        $this->reservedWords = $word;
+    }
+
+    /**
+     * @param string $word
+     * @throws InvalidArgumentException
+     * @return void
+     */
+    final protected function guardIsNotReservedWord(string $word): void
+    {
+        if ($this->isReservedWord($word)) {
+            throw new InvalidArgumentException('Cannot use reserved word "' . $word . '" as metric name.');
+        }
     }
 }
