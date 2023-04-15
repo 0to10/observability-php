@@ -11,7 +11,6 @@ use ZERO2TEN\Observability\APM\TransactionInterface;
 
 use function array_filter;
 use function gettype;
-use function in_array;
 
 /**
  * NewRelicAgent
@@ -86,6 +85,8 @@ class NewRelicAgent extends Agent
         if (!$this->isExtensionLoaded(self::EXTENSION_NAME)) {
             return false;
         }
+
+        $this->reserveWords(...self::RESERVED_WORDS);
 
         $this->applicationName = $this->getConfigurationOption(self::EXTENSION_INI_APP_NAME);
         $this->license = $this->getConfigurationOption(self::EXTENSION_INI_LICENSE);
@@ -283,22 +284,5 @@ class NewRelicAgent extends Agent
     public function isTransactionEnded(): bool
     {
         return $this->transactionEnded;
-    }
-
-    /**
-     * @param string $word
-     * @throws InvalidArgumentException
-     * @return void
-     */
-    private function guardIsNotReservedWord(string $word): void
-    {
-        if (!in_array($word, self::RESERVED_WORDS, true)) {
-            return;
-        }
-
-        throw new InvalidArgumentException(sprintf(
-            'Cannot use reserved word "%s" as metric name.',
-            $word
-        ));
     }
 }
