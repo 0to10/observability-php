@@ -12,7 +12,6 @@ use ZERO2TEN\Observability\APM\TransactionInterface;
 use function array_filter;
 use function gettype;
 use function in_array;
-use function sprintf;
 
 /**
  * NewRelicAgent
@@ -127,7 +126,7 @@ class NewRelicAgent extends Agent
     {
         $this->guardIsNotReservedWord($name);
 
-        $this->newrelic_custom_metric(sprintf('Custom/%s', $name), $milliseconds);
+        $this->newrelic_custom_metric('Custom/' . $name, $milliseconds);
     }
 
     /**
@@ -182,10 +181,7 @@ class NewRelicAgent extends Agent
         $this->guardIsNotReservedWord($name);
 
         if (null !== $value && !is_scalar($value)) {
-            throw new InvalidArgumentException(sprintf(
-                'Transaction parameter value must be scalar, "%s" given.',
-                gettype($value)
-            ));
+            throw new InvalidArgumentException('Transaction parameter value must be scalar, "' . gettype($value) . '" given.');
         }
 
         $this->newrelic_add_custom_parameter($name, $value);
