@@ -5,6 +5,8 @@ namespace Nouve\APM;
 /**
  * Client
  *
+ * @deprecated Use \ZERO2TEN\Observability\Client instead
+ *
  * @copyright Copyright (c) 2018 Nouvé B.V. <https://nouve.nl>
  * @package Nouve\APM
  */

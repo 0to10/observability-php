@@ -7,6 +7,8 @@ use GuzzleHttp\Client as HttpClient;
 /**
  * AgentInterface
  *
+ * @deprecated Use \ZERO2TEN\Observability\APM\AgentInterface instead
+ *
  * @copyright Copyright (c) 2018 Nouvé B.V. <https://nouve.nl>
  * @package Nouve\APM
  */

@@ -10,6 +10,8 @@ use Throwable;
 /**
  * NullAgent
  *
+ * @deprecated Use \ZERO2TEN\Observability\APM\Agent\NullAgent instead
+ *
  * @copyright Copyright (c) 2018 Nouvé B.V. <https://nouve.nl>
  * @package Nouve\APM\Agents
  */

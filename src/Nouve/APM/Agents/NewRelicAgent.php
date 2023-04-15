@@ -14,6 +14,8 @@ use ZERO2TEN\Observability\APM\NativeExtensions;
 /**
  * NewRelicAgent
  *
+ * @deprecated Use \ZERO2TEN\Observability\APM\Agent\NewRelic\NewRelicAgent instead
+ *
  * @copyright Copyright (c) 2018 Nouvé B.V. <https://nouve.nl>
  * @package Nouve\APM\Agents
  */

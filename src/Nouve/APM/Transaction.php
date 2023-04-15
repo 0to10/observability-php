@@ -8,6 +8,8 @@ namespace Nouve\APM;
  * This class exposes specific methods of the AgentInterface that allows
  * customization of the (current) transaction.
  *
+ * @deprecated Use \ZERO2TEN\Observability\APM\Transaction instead
+ *
  * @copyright Copyright (c) 2018 Nouvé B.V. <https://nouve.nl>
  * @package Nouve\APM
  */

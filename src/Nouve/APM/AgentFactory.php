@@ -8,6 +8,8 @@ use Nouve\APM\Agents\NullAgent;
 /**
  * AgentFactory
  *
+ * @deprecated
+ *
  * @copyright Copyright (c) 2018 Nouvé B.V. <https://nouve.nl>
  * @package Nouve\APM
  */

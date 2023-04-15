@@ -5,6 +5,8 @@ namespace Nouve\APM;
 /**
  * Browser
  *
+ * @deprecated Use \ZERO2TEN\Observability\APM\Browser instead
+ *
  * @copyright Copyright (c) 2019 Nouvé B.V. <https://nouve.nl>
  * @package Nouve\APM
  */
