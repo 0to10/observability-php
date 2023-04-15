@@ -2,7 +2,9 @@ name: PHP Composer
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - release/*
   pull_request:
     branches: [ "main" ]
 
@@ -33,10 +35,10 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run tests with phpunit/phpunit
-        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+        run: XDEBUG_MODE=coverage vendor/bin/phpunit --configuration phpunit.xml.dist
 
       - name: Fix code coverage paths
-        run: sed -i 's@'$GITHUB_WORKSPACE'@/github/workspace/@g' coverage.xml
+        run: sed -i 's@'$GITHUB_WORKSPACE'@/github/workspace/@g' build/coverage.xml
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master

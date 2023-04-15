@@ -16,7 +16,7 @@
         </exclude>
 
         <report>
-            <clover outputFile="build/coverage/xml"/>
+            <clover outputFile="build/coverage.xml"/>
         </report>
     </coverage>
 

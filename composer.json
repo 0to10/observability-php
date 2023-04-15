@@ -1,7 +1,6 @@
 {
   "name": "0to10/observability-php",
   "description": "Library to simplify customising observability integrations in PHP projects.",
-  "version": "1.0.1",
   "authors": [{
     "name": "0TO10 B.V.",
     "homepage": "https://0to10.nl"
