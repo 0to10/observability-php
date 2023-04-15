@@ -34,11 +34,6 @@ require 'vendor/autoload.php';
 
 use ZERO2TEN\Observability\Client;
 
-// Creates a Client instance with the first supported AgentInterface
-// implementation configured in the Client class
-$client = Client::create();
-
-// Alternatively, you can instantiate a Client instance yourself
 $nullAgent = new NullAgent();
 $client = new Client($nullAgent);
 ```
