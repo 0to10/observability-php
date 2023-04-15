@@ -11,6 +11,9 @@
         <include>
             <directory suffix=".php">src/</directory>
         </include>
+        <exclude>
+            <directory>src/Nouve/Tests/</directory>
+        </exclude>
 
         <report>
             <clover outputFile="build/coverage/xml"/>
