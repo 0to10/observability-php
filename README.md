@@ -27,6 +27,8 @@ composer require 0to10/observability-php
 
 ### Basic usage
 
+Below is the high-level documentation of how to work with this library.
+
 ```php
 <?php
 
@@ -48,6 +50,63 @@ try {
 $client->transaction()->addParameter('user_id', 50);
 ```
 
+
+### Working with transactions
+
+A _Transaction_ is a logical unit of work in a software application. This might
+be handling a request and sending a response (in a Web transaction), executing
+a script that handles some piece of business logic, etc.
+
+This library exposes a helper class via the `transaction()` method of a
+`Client` instance that can be used to customise monitoring of a transaction.
+
+The methods of the returned class are documented in `TransactionInterface`.
+
+
+### Real-user monitoring
+
+Real-user monitoring (RUM) may be customised by calling the `browser()` method
+of a `Client` instance.
+
+Automatic instrumentation (e.g. automatic injection of browser scripts in the
+header and footer of a page) may be disabled using the following method:
+
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+use ZERO2TEN\Observability\Client;
+use ZERO2TEN\Observability\APM\Agent\NullAgent;
+
+$client = new Client(new NullAgent);
+
+$browser = $client->browser();
+
+$browser->disableAutomaticTimingScripts();
+```
+
+Note that this must be done before any output is sent to the browser, and that
+it's more stable to disable RUM as part of your PHP configuration (if available).
+
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+use ZERO2TEN\Observability\Client;
+use ZERO2TEN\Observability\APM\Agent\NullAgent;
+
+$client = new Client(new NullAgent);
+
+$browser = $client->browser();
+
+// Returns the header RUM script (Javascript) as string without <script> tags
+$browser->getHeaderScript();
+
+// Returns the footer RUM script (Javascript) as string without <script> tags
+$browser->getFooterScript();
+```
 
 
 ### Legacy usage
@@ -72,3 +131,11 @@ $nullAgent = new NullAgent();
 $client = new Client($nullAgent);
 ```
 
+
+## Usage notes
+
+It is important to understand that this library exposes generic methods to
+adjust observability within projects. Depending on the capabilities of the used
+observability tool, methods may not have the desired outcome. Always make sure
+that you understand the impact of customising your setup before publishing this
+into any production environment.
