@@ -1,5 +1,14 @@
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=0to10_observability-php&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=0to10_observability-php)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=0to10_observability-php&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=0to10_observability-php)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=0to10_observability-php&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=0to10_observability-php)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=0to10_observability-php&metric=coverage)](https://sonarcloud.io/summary/new_code?id=0to10_observability-php)
+
+
 # Observability library for PHP
 
+This package aims to make it easier to monitor your application by
+generalising frequently used methods to customise how you instrument
+your code.
 
 
 ## Getting started
