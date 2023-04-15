@@ -2,7 +2,6 @@
 declare(strict_types=1);
 namespace ZERO2TEN\Observability;
 
-use InvalidArgumentException;
 use ZERO2TEN\Observability\APM\AgentInterface;
 use ZERO2TEN\Observability\APM\Browser;
 use ZERO2TEN\Observability\APM\BrowserInterface;
@@ -10,7 +9,7 @@ use ZERO2TEN\Observability\APM\Transaction;
 use ZERO2TEN\Observability\APM\TransactionInterface;
 
 /**
- * APM
+ * Client
  *
  * @copyright Copyright (c) 2023 0TO10 B.V. <https://0to10.nl>
  * @package ZERO2TEN\Observability
@@ -27,19 +26,6 @@ class Client
     public function __construct(AgentInterface $agent)
     {
         $this->agent = $agent;
-    }
-
-    /**
-     * @param string $name
-     * @return Metric
-     */
-    public function metric(string $name): Metric
-    {
-        if ($this->agent->isReservedWord($name)) {
-            throw new InvalidArgumentException('Cannot use reserved word "' . $name . '" as metric name.');
-        }
-
-        return new Metric($this->agent, $name);
     }
 
     /**
