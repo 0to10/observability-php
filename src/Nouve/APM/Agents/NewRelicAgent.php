@@ -3,8 +3,13 @@ declare(strict_types=1);
 namespace Nouve\APM\Agents;
 
 use GuzzleHttp\Client as HttpClient;
+use InvalidArgumentException;
 use Nouve\APM\AgentInterface;
 use Nouve\APM\Transaction;
+use RuntimeException;
+use Throwable;
+use ZERO2TEN\Observability\APM\Agent\NewRelic\NewRelicAgent as NewRelicAgentV2;
+use ZERO2TEN\Observability\APM\NativeExtensions;
 
 /**
  * NewRelicAgent
@@ -12,17 +17,20 @@ use Nouve\APM\Transaction;
  * @copyright Copyright (c) 2018 Nouvé B.V. <https://nouve.nl>
  * @package Nouve\APM\Agents
  */
-final class NewRelicAgent implements AgentInterface
+class NewRelicAgent implements AgentInterface
 {
+    use NativeExtensions;
+
     public const EXTENSION_NAME = 'newrelic';
     public const METRICS_BASE_URL = '';
+
+    /** @var NewRelicAgentV2 */
+    private $agent;
 
     /** @var string */
     private $applicationName;
     /** @var string */
     private $license;
-    /** @var bool */
-    private $transactionEnded = false;
 
     /** @var string[] */
     private static $reservedWords = [
@@ -34,18 +42,17 @@ final class NewRelicAgent implements AgentInterface
     ];
 
     /**
-     * @param string $license
-     * @throws \RuntimeException
+     * @param string|null $license
+     * @param NewRelicAgentV2|null $newAgent
+     * @throws RuntimeException
      * @constructor
      */
-    public function __construct(string $license = null)
+    public function __construct(string $license = null, NewRelicAgentV2 $newAgent = null)
     {
-        if (!self::isSupported()) {
-            throw new \RuntimeException('This agent is not supported on this platform.');
-        }
+        $this->agent = $newAgent ?: new NewRelicAgentV2();
 
-        $this->applicationName = ini_get('newrelic.appname');
-        $this->license = $license ?: ini_get('newrelic.license');
+        $this->applicationName = $this->getConfigurationOption('newrelic.appname') ?: 'unknown';
+        $this->license = $license ?: $this->getConfigurationOption('newrelic.license') ?: 'unknown';
     }
 
     /**
@@ -53,7 +60,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function setApplicationName(string $name): bool
     {
-        return newrelic_set_appname($name, $this->license, false);
+        return $this->agent->newrelic_set_appname($name, $this->license);
     }
 
     /**
@@ -63,15 +70,15 @@ final class NewRelicAgent implements AgentInterface
     {
         $this->guardIsNotReservedWord($name);
 
-        newrelic_record_custom_event($name, $attributes);
+        $this->agent->newrelic_record_custom_event($name, $attributes);
     }
 
     /**
      * @inheritdoc
      */
-    public function recordException(\Throwable $exception): void
+    public function recordException(Throwable $exception): void
     {
-        newrelic_notice_error($exception->getMessage(), $exception);
+        $this->agent->newrelic_notice_error($exception->getMessage(), $exception);
     }
 
     /**
@@ -79,12 +86,10 @@ final class NewRelicAgent implements AgentInterface
      */
     public function startTransaction(): Transaction
     {
-        if (!newrelic_start_transaction($this->applicationName, $this->license)) {
-            newrelic_end_transaction();
-            newrelic_start_transaction($this->applicationName, $this->license);
+        if (!$this->agent->newrelic_start_transaction($this->applicationName, $this->license)) {
+            $this->agent->newrelic_end_transaction();
+            $this->agent->newrelic_start_transaction($this->applicationName, $this->license);
         }
-
-        $this->transactionEnded = false;
 
         return new Transaction($this);
     }
@@ -94,7 +99,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function setTransactionName(string $name): bool
     {
-        return newrelic_name_transaction($name);
+        return $this->agent->newrelic_name_transaction($name);
     }
 
     /**
@@ -104,7 +109,7 @@ final class NewRelicAgent implements AgentInterface
     {
         $this->guardIsNotReservedWord($name);
 
-        return newrelic_custom_metric(sprintf('Custom/%s', $name), $milliseconds);
+        return $this->agent->newrelic_custom_metric(sprintf('Custom/%s', $name), $milliseconds);
     }
 
     /**
@@ -115,13 +120,13 @@ final class NewRelicAgent implements AgentInterface
         $this->guardIsNotReservedWord($name);
 
         if (null !== $value && !is_scalar($value)) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(sprintf(
                 'Transaction parameter value must be scalar, "%s" given.',
                 gettype($value)
             ));
         }
 
-        return newrelic_add_custom_parameter($name, $value);
+        return $this->agent->newrelic_add_custom_parameter($name, $value);
     }
 
     /**
@@ -129,7 +134,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function flagTransaction(bool $background): void
     {
-        newrelic_background_job($background);
+        $this->agent->newrelic_background_job($background);
     }
 
     /**
@@ -137,7 +142,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function ignoreTransactionApdex(): void
     {
-        newrelic_ignore_apdex();
+        $this->agent->newrelic_ignore_apdex();
     }
 
     /**
@@ -145,7 +150,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function ignoreTransaction(): void
     {
-        newrelic_ignore_transaction();
+        $this->agent->newrelic_ignore_transaction();
     }
 
     /**
@@ -153,7 +158,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function stopTransactionTiming(): void
     {
-        newrelic_end_of_transaction();
+        $this->agent->newrelic_end_of_transaction();
     }
 
     /**
@@ -161,15 +166,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function endTransaction(): bool
     {
-        if ($this->transactionEnded) {
-            return true;
-        }
-
-        if (newrelic_end_transaction(false)) {
-            $this->transactionEnded = true;
-        }
-
-        return $this->transactionEnded;
+        return $this->agent->newrelic_end_transaction();
     }
 
     /**
@@ -177,7 +174,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function disableAutomaticRealUserMonitoringScripts(): void
     {
-        newrelic_disable_autorum();
+        $this->agent->newrelic_disable_autorum();
     }
 
     /**
@@ -185,7 +182,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function getRealUserMonitoringHeaderScript(): string
     {
-        return newrelic_get_browser_timing_header(false);
+        return $this->agent->newrelic_get_browser_timing_header(false);
     }
 
     /**
@@ -193,7 +190,7 @@ final class NewRelicAgent implements AgentInterface
      */
     public function getRealUserMonitoringFooterScript(): string
     {
-        return newrelic_get_browser_timing_footer(false);
+        return $this->agent->newrelic_get_browser_timing_footer(false);
     }
 
     /**
@@ -223,7 +220,7 @@ final class NewRelicAgent implements AgentInterface
 
     /**
      * @param string $word
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      * @return void
      */
     private function guardIsNotReservedWord(string $word): void
@@ -232,7 +229,7 @@ final class NewRelicAgent implements AgentInterface
             return;
         }
 
-        throw new \InvalidArgumentException(sprintf(
+        throw new InvalidArgumentException(sprintf(
             'Cannot use reserved word "%s" as metric name.',
             $word
         ));

@@ -27,6 +27,26 @@ composer require 0to10/observability-php
 
 ### Basic usage
 
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+use ZERO2TEN\Observability\Client;
+
+// Creates a Client instance with the first supported AgentInterface
+// implementation configured in the Client class
+$client = Client::create();
+
+// Alternatively, you can instantiate a Client instance yourself
+$nullAgent = new NullAgent();
+$client = new Client($nullAgent);
+```
+
+
+
+### Legacy usage
+
 Library versions up to 2.0.0 continue to support using the `Client` class located
 in the `Nouve\APM` namespace. Please do not use this method for new projects.
 
@@ -46,3 +66,4 @@ $client = Client::create();
 $nullAgent = new NullAgent();
 $client = new Client($nullAgent);
 ```
+

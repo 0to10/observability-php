@@ -1,34 +1,49 @@
 {
   "name": "0to10/observability-php",
-  "version": "1.0.1",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "0TO10",
-      "email": "open-source-software@0to10.nl"
-    }
+  "description": "Library to simplify customising observability integrations in PHP projects.",
+  "authors": [{
+    "name": "0TO10 B.V.",
+    "homepage": "https://0to10.nl"
+  }],
+  "keywords": [
+    "apm",
+    "metrics",
+    "monitoring",
+    "observability",
+    "telemetry"
   ],
+  "type": "library",
   "require": {
+    "php": ">=7.3 | >8.0",
+
     "guzzlehttp/guzzle": "^6.2 | ^7.0.0",
-    "psr/http-message": "^1.0"
+    "monolog/monolog": "~2.3.5",
+    "psr/log": "^1.1.4"
   },
-  "suggest": {
-    "ext-newrelic": ">=0"
+  "require-dev": {
+    "johnkary/phpunit-speedtrap": "^4.0.1",
+    "phpunit/phpunit": "^9.5.11"
   },
   "autoload": {
     "psr-4": {
+      "ZERO2TEN\\Observability\\": "src/Observability",
       "Nouve\\APM\\": "src/Nouve/APM"
     }
   },
   "autoload-dev": {
-    "Nouve\\Tests\\": "src/Nouve/Tests"
+    "psr-4": {
+      "ZERO2TEN\\Tests\\Observability\\": "tests/Observability",
+      "Nouve\\Tests\\": "src/Nouve/Tests"
+    }
   },
-  "require-dev": {
-    "phpunit/phpunit": "~7.4.4",
-    "lstrojny/phpunit-function-mocker": "~1.0.1"
+  "suggest": {
+    "ext-newrelic": ">=9.0",
+    "newrelic/monolog-enricher": ">=2.0.0"
   },
   "minimum-stability": "stable",
   "replace": {
     "nouve/application-monitoring": "^1.2.3"
-  }
+  },
+  "prefer-stable": true,
+  "license": "MIT"
 }

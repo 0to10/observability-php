@@ -2,11 +2,19 @@
 declare(strict_types=1);
 namespace Nouve\Tests\APM\Agents;
 
+use Exception;
 use GuzzleHttp\Client;
+use InvalidArgumentException;
 use Nouve\APM\Agents\NewRelicAgent;
 use Nouve\APM\Transaction;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Extension\FunctionMocker;
+use ReflectionClass;
+use ReflectionException;
+use stdClass;
+use ZERO2TEN\Observability\APM\Agent\NewRelic\NewRelicAgent as NewRelicAgentV2;
+
+use function extension_loaded;
 
 /**
  * NewRelicAgentTest
@@ -18,8 +26,8 @@ use PHPUnit\Extension\FunctionMocker;
  */
 class NewRelicAgentTest extends TestCase
 {
-    /** @var \PHPUnit_Framework_MockObject_MockObject */
-    private $php;
+    /** @var NewRelicAgentV2|MockObject */
+    private $newAgentMock;
 
     /**
      * @return void
@@ -28,26 +36,12 @@ class NewRelicAgentTest extends TestCase
     {
         parent::setUp();
 
-        $this->php = FunctionMocker::start($this, 'Nouve\\APM\\Agents')
-            ->mockFunction('extension_loaded')
-            ->mockFunction('ini_get')
-            ->mockFunction('newrelic_set_appname')
-
-            ->mockFunction('newrelic_name_transaction')
-            ->mockFunction('newrelic_background_job')
-            ->mockFunction('newrelic_ignore_apdex')
-            ->mockFunction('newrelic_ignore_transaction')
-            ->mockFunction('newrelic_end_transaction')
-            ->mockFunction('newrelic_end_of_transaction')
-            ->mockFunction('newrelic_start_transaction')
-            ->mockFunction('newrelic_custom_metric')
-            ->mockFunction('newrelic_add_custom_parameter')
-
-            ->mockFunction('newrelic_get_browser_timing_header')
-            ->mockFunction('newrelic_get_browser_timing_footer')
-
-            ->mockFunction('newrelic_notice_error')
-            ->mockFunction('newrelic_record_custom_event')
+        $this->newAgentMock = $this->getMockBuilder(NewRelicAgentV2::class)
+            ->onlyMethods([
+                'isExtensionLoaded',
+                'getConfigurationOption',
+                '__call',
+            ])
             ->getMock()
         ;
     }
@@ -56,81 +50,59 @@ class NewRelicAgentTest extends TestCase
      * @group unit
      * @covers ::__construct
      *
+     * @throws ReflectionException
      * @return void
      */
     public function testConstruct(): void
     {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
+        /** @var NewRelicAgent|MockObject $agentMock */
+        $agentMock = $this->getMockBuilder(NewRelicAgent::class)
+            ->onlyMethods([
+                'getConfigurationOption',
+            ])
+            ->getMock()
         ;
 
-        $this->php
-            ->expects($this->at(1))
-            ->method('ini_get')
-            ->with('newrelic.appname')
-            ->willReturn('Application name')
+        $agentMock
+            ->expects($this->exactly(2))
+            ->method('getConfigurationOption')
+            ->willReturnMap([
+                ['newrelic.appname', 'Application name'],
+                ['newrelic.license', '0123456789ABC'],
+            ])
         ;
 
-        $this->php
-            ->expects($this->at(2))
-            ->method('ini_get')
-            ->with('newrelic.license')
-            ->willReturn('0123456789ABC')
-        ;
-
-        new NewRelicAgent;
+        $rc = new ReflectionClass($agentMock);
+        $rc->getConstructor()->invoke($agentMock);
     }
 
     /**
      * @group unit
      * @covers ::__construct
      *
+     * @throws ReflectionException
      * @return void
      */
     public function testConstructWithCustomLicense(): void
     {
-        $this->php
+        /** @var NewRelicAgent|MockObject $agentMock */
+        $agentMock = $this->getMockBuilder(NewRelicAgent::class)
+            ->onlyMethods([
+                'getConfigurationOption',
+            ])
+            ->getMock()
+        ;
+
+        $agentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
+            ->method('getConfigurationOption')
+            ->willReturnMap([
+                ['newrelic.license', '0123456789ABC'],
+            ])
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('ini_get')
-            ->with('newrelic.appname')
-            ->willReturn('Application name')
-        ;
-
-        new NewRelicAgent('SomeLicense');
-    }
-
-    /**
-     * @group unit
-     * @covers ::__construct
-     *
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage This agent is not supported on this platform.
-     */
-    public function testConstructWithUnsupportedPlatformThrowsException(): void
-    {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(false)
-        ;
-
-        $this->php
-            ->expects($this->never())
-            ->method('ini_get')
-        ;
-
-        new NewRelicAgent;
+        $rc = new ReflectionClass($agentMock);
+        $rc->getConstructor()->invoke($agentMock, 'SomeLicense');
     }
 
     /**
@@ -141,19 +113,14 @@ class NewRelicAgentTest extends TestCase
      */
     public function testStopTransactionTiming(): void
     {
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
+            ->method('__call')
+            ->with('newrelic_end_of_transaction')
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_end_of_transaction')
-        ;
-
-        (new NewRelicAgent)->stopTransactionTiming();
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+        $agent->stopTransactionTiming();
     }
 
     /**
@@ -164,37 +131,19 @@ class NewRelicAgentTest extends TestCase
      */
     public function testEndTransaction(): void
     {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
-        ;
-
-        $this->php
+        $this->newAgentMock
             ->expects($this->any())
-            ->method('newrelic_end_transaction')
-            ->with(false)
-            ->willReturnOnConsecutiveCalls([
+            ->method('__call')
+            ->with('newrelic_end_transaction', [])
+            ->willReturnOnConsecutiveCalls(
                 true,
                 false,
-            ])
+            )
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_start_transaction')
-            ->with($this->anything())
-            ->willReturn(true)
-        ;
-
-        $agent = new NewRelicAgent;
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
 
         $this->assertTrue($agent->endTransaction());
-        $this->assertTrue($agent->endTransaction());
-
-        $agent->startTransaction();
-
         $this->assertFalse($agent->endTransaction());
     }
 
@@ -206,21 +155,17 @@ class NewRelicAgentTest extends TestCase
      */
     public function testSetApplicationName(): void
     {
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
+            ->method('__call')
+            ->with('newrelic_set_appname', [
+                'SomeName',
+                'license-code',
+            ])
             ->willReturn(true)
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_set_appname')
-            ->with('SomeName', 'license-code', false)
-            ->willReturn(true)
-        ;
-
-        $agent = new NewRelicAgent('license-code');
+        $agent = new NewRelicAgent('license-code', $this->newAgentMock);
 
         $this->assertTrue($agent->setApplicationName('SomeName'));
     }
@@ -240,20 +185,17 @@ class NewRelicAgentTest extends TestCase
             'attribute2' => 50,
         ];
 
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
+            ->method('__call')
+            ->with('newrelic_record_custom_event', [
+                $eventName,
+                $eventAttributes,
+            ])
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_record_custom_event')
-            ->with($eventName, $eventAttributes)
-        ;
-
-        (new NewRelicAgent)->recordEvent($eventName, $eventAttributes);
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+        $agent->recordEvent($eventName, $eventAttributes);
     }
 
     /**
@@ -262,27 +204,23 @@ class NewRelicAgentTest extends TestCase
      * @covers ::guardIsNotReservedWord
      *
      * @dataProvider reservedWordsProvider
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessageRegExp /Cannot use reserved word "\w+" as metric name\./
      *
      * @param string $reservedWord
      * @return void
      */
     public function testRecordEventWithReservedWordThrowsException(string $reservedWord): void
     {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
-        ;
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/Cannot use reserved word "\w+" as metric name\./');
 
-        $this->php
+        $this->newAgentMock
             ->expects($this->never())
-            ->method('newrelic_record_custom_event')
+            ->method('__call')
+            ->with('newrelic_record_custom_event')
         ;
 
-        (new NewRelicAgent)->recordEvent($reservedWord, []);
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+        $agent->recordEvent($reservedWord, []);
     }
 
     /**
@@ -304,21 +242,16 @@ class NewRelicAgentTest extends TestCase
      */
     public function testSetTransactionName(): void
     {
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
+            ->method('__call')
+            ->with('newrelic_name_transaction', [
+                'MyTransaction',
+            ])
             ->willReturn(true)
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_name_transaction')
-            ->with('MyTransaction')
-            ->willReturn(true)
-        ;
-
-        $agent = new NewRelicAgent;
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
 
         $this->assertTrue($agent->setTransactionName('MyTransaction'));
     }
@@ -331,19 +264,14 @@ class NewRelicAgentTest extends TestCase
      */
     public function testIgnoreTransaction(): void
     {
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
+            ->method('__call')
+            ->with('newrelic_ignore_transaction')
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_ignore_transaction')
-        ;
-
-        (new NewRelicAgent)->ignoreTransaction();
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+        $agent->ignoreTransaction();
     }
 
     /**
@@ -354,24 +282,17 @@ class NewRelicAgentTest extends TestCase
      */
     public function testFlagTransaction(): void
     {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
-        ;
-
-        $this->php
-            ->expects($this->any())
-            ->method('newrelic_background_job')
-            ->withConsecutive([
-                true,
-            ], [
-                false,
+        $this->newAgentMock
+            ->expects($this->exactly(2))
+            ->method('__call')
+            ->with('newrelic_background_job')
+            ->willReturnMap([
+                [true],
+                [false],
             ])
         ;
 
-        $agent = new NewRelicAgent;
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
 
         $agent->flagTransaction(true);
         $agent->flagTransaction(false);
@@ -385,24 +306,20 @@ class NewRelicAgentTest extends TestCase
      */
     public function testRecordException(): void
     {
-        $exception = new \Exception('Some exception message.');
+        $exception = new Exception('Some exception message.');
 
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
+            ->method('__call')
+            ->with('newrelic_notice_error', [
+                $exception->getMessage(),
+                $exception,
+            ])
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_notice_error')
-            ->with($exception->getMessage(), $exception)
-        ;
-
-        (new NewRelicAgent)->recordException($exception);
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+        $agent->recordException($exception);
     }
-
 
     /**
      * @group unit
@@ -412,35 +329,39 @@ class NewRelicAgentTest extends TestCase
      */
     public function testStartTransaction(): void
     {
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
+            ->method('__call')
+            ->with('newrelic_start_transaction')
             ->willReturn(true)
         ;
 
-        $this->php
-            ->expects($this->any())
-            ->method('newrelic_end_transaction')
-            ->willReturn(true)
-        ;
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
 
-        $this->php
-            ->expects($this->any())
-            ->method('newrelic_start_transaction')
-            ->willReturnOnConsecutiveCalls([
-                true,
-                false,
+        $this->assertInstanceOf(Transaction::class, $agent->startTransaction());
+    }
+
+    /**
+     * @group unit
+     * @covers ::startTransaction
+     *
+     * @return void
+     */
+    public function testStartTransactionRetries(): void
+    {
+        $this->newAgentMock
+            ->expects($this->exactly(3))
+            ->method('__call')
+            ->willReturnMap([
+                ['newrelic_start_transaction', false],
+                ['newrelic_end_transaction', true],
+                ['newrelic_start_transaction', true],
             ])
         ;
 
-        $agent = new NewRelicAgent;
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
 
-        $this->assertTrue($agent->endTransaction());
         $this->assertInstanceOf(Transaction::class, $agent->startTransaction());
-
-        $this->assertTrue($agent->endTransaction());
-        $this->assertNotNull($agent->startTransaction());
     }
 
     /**
@@ -452,47 +373,44 @@ class NewRelicAgentTest extends TestCase
      */
     public function testAddTransactionParameter(): void
     {
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
+            ->method('__call')
+            ->with('newrelic_add_custom_parameter',[
+                'SomeParameter',
+                'test',
+            ])
             ->willReturn(true)
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_add_custom_parameter')
-            ->with('SomeParameter', 'test')
-            ->willReturn(true)
-        ;
-
-        (new NewRelicAgent)->addTransactionParameter('SomeParameter', 'test');
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+        $agent->addTransactionParameter('SomeParameter', 'test');
     }
 
     /**
      * @group unit
      * @covers ::addTransactionParameter
      *
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessageRegExp /Transaction parameter value must be scalar, "\w+" given\./
-     *
      * @return void
      */
     public function testAddTransactionParameterWithNonScalarThrowsException(): void
     {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
-        ;
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/Transaction parameter value must be scalar, "\w+" given\./');
 
-        $this->php
+        $value = new stdClass();
+
+        $this->newAgentMock
             ->expects($this->never())
-            ->method('newrelic_add_custom_parameter')
+            ->method('__call')
+            ->with('newrelic_add_custom_parameter', [
+                'SomeParameter',
+                $value,
+            ])
         ;
 
-        (new NewRelicAgent)->addTransactionParameter('SomeParameter', new \stdClass);
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+        $agent->addTransactionParameter('SomeParameter', $value);
     }
 
     /**
@@ -500,19 +418,15 @@ class NewRelicAgentTest extends TestCase
      */
     public function testIgnoreTransactionApdex(): void
     {
-        $this->php
+
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
+            ->method('__call')
+            ->with('newrelic_ignore_apdex')
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_ignore_apdex')
-        ;
-
-        (new NewRelicAgent)->ignoreTransactionApdex();
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+        $agent->ignoreTransactionApdex();
     }
 
     /**
@@ -523,23 +437,38 @@ class NewRelicAgentTest extends TestCase
      */
     public function testAddTransactionMetric(): void
     {
-        $this->php
+        $this->newAgentMock
             ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
+            ->method('__call')
+            ->with('newrelic_custom_metric', [
+                'Custom/SomeMetric',
+                100.0,
+            ])
             ->willReturn(true)
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_custom_metric')
-            ->with('Custom/SomeMetric', 100.0)
-            ->willReturn(true)
-        ;
-
-        $agent = new NewRelicAgent;
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
 
         $this->assertTrue($agent->addTransactionMetric('SomeMetric', 100.0));
+    }
+
+    /**
+     * @group unit
+     * @covers ::disableAutomaticRealUserMonitoringScripts
+     *
+     * @return void
+     */
+    public function testDisableAutomaticRealUserMonitoringScripts(): void
+    {
+        $this->newAgentMock
+            ->expects($this->once())
+            ->method('__call')
+            ->with('newrelic_disable_autorum')
+        ;
+
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+
+        $agent->disableAutomaticRealUserMonitoringScripts();
     }
 
     /**
@@ -551,31 +480,19 @@ class NewRelicAgentTest extends TestCase
      */
     public function testGetRealUserMonitoringScripts(): void
     {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
+        $this->newAgentMock
+            ->expects($this->any())
+            ->method('__call')
+            ->willReturnMap([
+                ['newrelic_get_browser_timing_header', [false], 'echo "Header timing script!"'],
+                ['newrelic_get_browser_timing_footer', [false], 'echo "Footer timing script!"'],
+            ])
         ;
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_get_browser_timing_header')
-            ->with(false)
-            ->willReturn('echo \'Header timing script!\'')
-        ;
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
 
-        $this->php
-            ->expects($this->once())
-            ->method('newrelic_get_browser_timing_footer')
-            ->with(false)
-            ->willReturn('echo \'Footer timing script!\'')
-        ;
-
-        $agent = new NewRelicAgent;
-
-        $this->assertEquals('echo \'Header timing script!\'', $agent->getRealUserMonitoringHeaderScript());
-        $this->assertEquals('echo \'Footer timing script!\'', $agent->getRealUserMonitoringFooterScript());
+        $this->assertEquals('echo "Header timing script!"', $agent->getRealUserMonitoringHeaderScript());
+        $this->assertEquals('echo "Footer timing script!"', $agent->getRealUserMonitoringFooterScript());
     }
 
     /**
@@ -586,14 +503,7 @@ class NewRelicAgentTest extends TestCase
      */
     public function testCreateHttpClient(): void
     {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
-        ;
-
-        $agent = new NewRelicAgent('SomeLicense');
+        $agent = new NewRelicAgent('SomeLicense', $this->newAgentMock);
 
         $httpClient = $agent->createHttpClient();
 
@@ -615,15 +525,6 @@ class NewRelicAgentTest extends TestCase
      */
     public function testIsSupported(): void
     {
-        $this->php
-            ->expects($this->once())
-            ->method('extension_loaded')
-            ->with(NewRelicAgent::EXTENSION_NAME)
-            ->willReturn(true)
-        ;
-
-        $supported = NewRelicAgent::isSupported();
-
-        $this->assertEquals(true, $supported);
+        $this->assertEquals(extension_loaded(NewRelicAgent::EXTENSION_NAME), NewRelicAgent::isSupported());
     }
 }

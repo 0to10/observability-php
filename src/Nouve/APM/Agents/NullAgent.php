@@ -5,6 +5,7 @@ namespace Nouve\APM\Agents;
 use GuzzleHttp\Client as HttpClient;
 use Nouve\APM\AgentInterface;
 use Nouve\APM\Transaction;
+use Throwable;
 
 /**
  * NullAgent
@@ -32,7 +33,7 @@ final class NullAgent implements AgentInterface
     /**
      * @inheritdoc
      */
-    public function recordException(\Throwable $exception): void
+    public function recordException(Throwable $exception): void
     {
     }
 
