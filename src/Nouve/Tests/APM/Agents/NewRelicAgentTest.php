@@ -454,6 +454,25 @@ class NewRelicAgentTest extends TestCase
 
     /**
      * @group unit
+     * @covers ::disableAutomaticRealUserMonitoringScripts
+     *
+     * @return void
+     */
+    public function testDisableAutomaticRealUserMonitoringScripts(): void
+    {
+        $this->newAgentMock
+            ->expects($this->once())
+            ->method('__call')
+            ->with('newrelic_disable_autorum')
+        ;
+
+        $agent = new NewRelicAgent(null, $this->newAgentMock);
+
+        $agent->disableAutomaticRealUserMonitoringScripts();
+    }
+
+    /**
+     * @group unit
      * @covers ::getRealUserMonitoringHeaderScript
      * @covers ::getRealUserMonitoringFooterScript
      *
