@@ -33,9 +33,19 @@ composer require 0to10/observability-php
 require 'vendor/autoload.php';
 
 use ZERO2TEN\Observability\Client;
+use ZERO2TEN\Observability\APM\Agent\NullAgent;
 
 $nullAgent = new NullAgent();
 $client = new Client($nullAgent);
+
+try {
+    // Some application code
+} catch (\Exception $e) {
+    $client->transaction()->recordException($e);
+}
+
+// Add a parameter to the current transaction
+$client->transaction()->addParameter('user_id', 50);
 ```
 
 
