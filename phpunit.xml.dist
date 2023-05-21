@@ -13,6 +13,8 @@
         </include>
         <exclude>
             <directory>src/Nouve/Tests/</directory>
+            <directory>src/Nouve/APM/Metrics/</directory>
+            <directory>tests/</directory>
         </exclude>
 
         <report>
