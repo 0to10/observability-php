@@ -26,14 +26,12 @@
   },
   "autoload": {
     "psr-4": {
-      "ZERO2TEN\\Observability\\": "src/Observability",
-      "Nouve\\APM\\": "src/Nouve/APM"
+      "ZERO2TEN\\Observability\\": "src/Observability"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "ZERO2TEN\\Tests\\Observability\\": "tests/Observability",
-      "Nouve\\Tests\\": "src/Nouve/Tests"
+      "ZERO2TEN\\Tests\\Observability\\": "tests/Observability"
     }
   },
   "suggest": {
