@@ -4,6 +4,11 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=0to10_observability-php&metric=coverage)](https://sonarcloud.io/summary/new_code?id=0to10_observability-php)
 
 
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/0to10/observability-php/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/0to10/observability-php/?branch=main)
+[![Build Status](https://scrutinizer-ci.com/g/0to10/observability-php/badges/build.png?b=main)](https://scrutinizer-ci.com/g/0to10/observability-php/build-status/main)
+[![Code Coverage](https://scrutinizer-ci.com/g/0to10/observability-php/badges/coverage.png?b=main)](https://scrutinizer-ci.com/g/0to10/observability-php/?branch=main)
+
+
 # Observability library for PHP
 
 This package aims to make it easier to monitor your application by
